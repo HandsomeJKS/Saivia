@@ -20,7 +20,7 @@ namespace DX
         static const unsigned int c_AllowTearing    = 0x1;
         static const unsigned int c_EnableHDR       = 0x2;
 
-        DeviceResources(DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM,
+        DeviceResources(DXGI_FORMAT backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM,// DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM, ImGui
                         DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D32_FLOAT,
                         UINT backBufferCount = 2,
                         D3D_FEATURE_LEVEL minFeatureLevel = D3D_FEATURE_LEVEL_11_0,
@@ -47,6 +47,7 @@ namespace DX
         D3D_FEATURE_LEVEL           GetDeviceFeatureLevel() const   { return m_d3dFeatureLevel; }
         ID3D12Resource*             GetRenderTarget() const         { return m_renderTargets[m_backBufferIndex].Get(); }
         ID3D12Resource*             GetDepthStencil() const         { return m_depthStencil.Get(); }
+		ID3D12DescriptorHeap*       GetImGuiSRV() const				{ return m_srvDescriptorHeap.Get(); } //ImGui
         ID3D12CommandQueue*         GetCommandQueue() const         { return m_commandQueue.Get(); }
         ID3D12CommandAllocator*     GetCommandAllocator() const     { return m_commandAllocators[m_backBufferIndex].Get(); }
         ID3D12GraphicsCommandList*  GetCommandList() const          { return m_commandList.Get(); }
@@ -102,6 +103,9 @@ namespace DX
         UINT                                                m_rtvDescriptorSize;
         D3D12_VIEWPORT                                      m_screenViewport;
         D3D12_RECT                                          m_scissorRect;
+
+		// ImGui
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>        m_srvDescriptorHeap;
 
         // Direct3D properties.
         DXGI_FORMAT                                         m_backBufferFormat;

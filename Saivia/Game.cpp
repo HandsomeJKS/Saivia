@@ -22,6 +22,10 @@ Game::~Game()
     if (m_deviceResources)
     {
         m_deviceResources->WaitForGpu();
+		// ImGui
+		ImGui_ImplDX12_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		ImGui::DestroyContext();
     }
 }
 
@@ -36,6 +40,17 @@ void Game::Initialize(HWND window, int width, int height)
     m_deviceResources->CreateWindowSizeDependentResources();
     CreateWindowSizeDependentResources();
 
+	// ImGui
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;		
+	ImGui_ImplWin32_Init(window);
+	ImGui_ImplDX12_Init(m_deviceResources->GetD3DDevice(), 
+		m_deviceResources->GetBackBufferCount(),
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		m_deviceResources->GetImGuiSRV()->GetCPUDescriptorHandleForHeapStart(),	// ¦bDeviceResource.h¥[¤JID3D12DescriptorHeap SRV
+		m_deviceResources->GetImGuiSRV()->GetGPUDescriptorHandleForHeapStart());	
+	
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:
     /*
@@ -89,12 +104,30 @@ void Game::Render()
 
     // TODO: Add your rendering code here.
 
+	// ImGui
+	
+
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	ImGui::Begin("Hello, world!");
+	ImGui::Text("This is some useful text.");
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::End();
+
+	auto srvDescriptor = m_deviceResources->GetImGuiSRV();
+	commandList->SetDescriptorHeaps(1, &srvDescriptor);
+
+	ImGui::Render();
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+
     PIXEndEvent(commandList);
 
     // Show the new frame.
     PIXBeginEvent(m_deviceResources->GetCommandQueue(), PIX_COLOR_DEFAULT, L"Present");
     m_deviceResources->Present();
-    PIXEndEvent(m_deviceResources->GetCommandQueue());
+    PIXEndEvent(m_deviceResources->GetCommandQueue());	
+	// m_deviceResources->WaitForGpu();
 }
 
 // Helper method to clear the back buffers.
@@ -108,7 +141,7 @@ void Game::Clear()
     auto dsvDescriptor = m_deviceResources->GetDepthStencilView();
 
     commandList->OMSetRenderTargets(1, &rtvDescriptor, FALSE, &dsvDescriptor);
-    commandList->ClearRenderTargetView(rtvDescriptor, Colors::CornflowerBlue, 0, nullptr);
+    commandList->ClearRenderTargetView(rtvDescriptor, Colors::White, 0, nullptr);
     commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     // Set the viewport and scissor rect.
