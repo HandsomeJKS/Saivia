@@ -50,6 +50,7 @@ void Game::Initialize(HWND window, int width, int height)
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		m_deviceResources->GetImGuiSRV()->GetCPUDescriptorHandleForHeapStart(),	// ¦bDeviceResource.h¥[¤JID3D12DescriptorHeap SRV
 		m_deviceResources->GetImGuiSRV()->GetGPUDescriptorHandleForHeapStart());	
+	ImGui::StyleColorsLight();
 	
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:
@@ -105,13 +106,11 @@ void Game::Render()
     // TODO: Add your rendering code here.
 
 	// ImGui
-	
-
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-	ImGui::Begin("Hello, world!");
-	ImGui::Text("This is some useful text.");
+
+	ImGui::NewFrame();	
+	ImGui::Begin("Main");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
 
@@ -120,6 +119,7 @@ void Game::Render()
 
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+	// ImGui
 
     PIXEndEvent(commandList);
 
