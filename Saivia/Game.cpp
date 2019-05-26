@@ -56,6 +56,45 @@ void Game::Initialize(HWND window, int width, int height)
 		m_deviceResources->GetImGuiSRV()->GetGPUDescriptorHandleForHeapStart());
 	ImGui::StyleColorsLight();
 
+	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
+
+	m_model = Model::CreateFromSDKMESH(L"cup.sdkmesh", m_deviceResources->GetD3DDevice());
+
+	ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
+
+	resourceUpload.Begin();
+
+	m_model->LoadStaticBuffers(m_deviceResources->GetD3DDevice(), resourceUpload);
+
+	m_modelResources = m_model->LoadTextures(m_deviceResources->GetD3DDevice(), resourceUpload);
+
+	m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
+
+	auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
+
+	uploadResourcesFinished.wait();
+
+	RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+
+	EffectPipelineStateDescription pd(
+		nullptr,
+		CommonStates::Opaque,
+		CommonStates::DepthDefault,
+		CommonStates::CullClockwise,
+		rtState);
+
+	EffectPipelineStateDescription pdAlpha(
+		nullptr,
+		CommonStates::AlphaBlend,
+		CommonStates::DepthDefault,
+		CommonStates::CullClockwise,
+		rtState);
+
+	m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pdAlpha);
+
+	m_world = DirectX::SimpleMath::Matrix::Identity;
+	Load_Model = false;
+
 	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
 	// e.g. for 60 FPS fixed timestep update logic, call:
 	/*
@@ -108,6 +147,17 @@ void Game::Render()
 	PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
 	// TODO: Add your rendering code here.
+
+	// Draw Model
+	if (m_model != nullptr)
+	{
+		ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
+		commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+
+		Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
+
+		m_model->Draw(commandList, m_modelNormal.cbegin());
+	}
 
 	// ImGui
 	ImGui_ImplDX12_NewFrame();
@@ -170,11 +220,48 @@ void Game::Render()
 					}
 				}
 				pfd->Release();
+				/*
+				m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
+			
+				// m_model = Model::CreateFromVBO(outputFile.c_str());
+				m_model = Model::CreateFromSDKMESH(L"D:\\Engine_Project\\Saivia\\Saivia\\tool\\cup.sdkmesh");
 
-				// auto model = Model::CreateFromVBO(outputFile.c_str());
+				ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
 
+				resourceUpload.Begin();
+
+				m_model->LoadStaticBuffers(m_deviceResources->GetD3DDevice(), resourceUpload);
+
+				m_modelResources = m_model->LoadTextures(m_deviceResources->GetD3DDevice(), resourceUpload);
+
+				m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
+
+				auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
+
+				uploadResourcesFinished.wait();
+
+				RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+
+				EffectPipelineStateDescription pd(
+					nullptr,
+					CommonStates::Opaque,
+					CommonStates::DepthDefault,
+					CommonStates::CullClockwise,
+					rtState);
+
+				EffectPipelineStateDescription pdAlpha(
+					nullptr,
+					CommonStates::AlphaBlend,
+					CommonStates::DepthDefault,
+					CommonStates::CullClockwise,
+					rtState);
+
+				m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pdAlpha);
+
+				m_world = DirectX::SimpleMath::Matrix::Identity;
+				*/
 			}
-			if (ImGui::MenuItem("Exit")) {}
+			if (ImGui::MenuItem("Exit")) { Load_Model = true; }
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("..."))
@@ -195,7 +282,7 @@ void Game::Render()
 
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-	// ImGui
+	// ImGui	
 
 	PIXEndEvent(commandList);
 
@@ -293,11 +380,21 @@ void Game::CreateDeviceDependentResources()
 void Game::CreateWindowSizeDependentResources()
 {
 	// TODO: Initialize windows-size dependent objects here.
+	auto RT_Desc = m_deviceResources->GetRenderTarget()->GetDesc();
+	m_view = DirectX::SimpleMath::Matrix::CreateLookAt(DirectX::SimpleMath::Vector3(2.f, 2.f, 2.f),
+		DirectX::SimpleMath::Vector3::Zero, DirectX::SimpleMath::Vector3::UnitY);
+	m_proj = DirectX::SimpleMath::Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
+		float(RT_Desc.Width) / float(RT_Desc.Height), 0.1f, 10.f);
 }
 
 void Game::OnDeviceLost()
 {
 	// TODO: Add Direct3D resource cleanup here.
+	m_states.reset();
+	m_fxFactory.reset();
+	m_modelResources.reset();
+	m_model.reset();
+	m_modelNormal.clear();
 }
 
 void Game::OnDeviceRestored()
