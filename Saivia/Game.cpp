@@ -11,78 +11,82 @@ using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
+static HWND hWnd;
+
 Game::Game() noexcept(false)
 {
-    m_deviceResources = std::make_unique<DX::DeviceResources>();
-    m_deviceResources->RegisterDeviceNotify(this);
+	m_deviceResources = std::make_unique<DX::DeviceResources>();
+	m_deviceResources->RegisterDeviceNotify(this);
 }
 
 Game::~Game()
 {
-    if (m_deviceResources)
-    {
-        m_deviceResources->WaitForGpu();
+	if (m_deviceResources)
+	{
+		m_deviceResources->WaitForGpu();
 		// ImGui
 		ImGui_ImplDX12_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
-    }
+	}
 }
 
 // Initialize the Direct3D resources required to run.
 void Game::Initialize(HWND window, int width, int height)
 {
-    m_deviceResources->SetWindow(window, width, height);
+	hWnd = window;
 
-    m_deviceResources->CreateDeviceResources();
-    CreateDeviceDependentResources();
+	m_deviceResources->SetWindow(window, width, height);
 
-    m_deviceResources->CreateWindowSizeDependentResources();
-    CreateWindowSizeDependentResources();
+	m_deviceResources->CreateDeviceResources();
+	CreateDeviceDependentResources();
+
+	m_deviceResources->CreateWindowSizeDependentResources();
+	CreateWindowSizeDependentResources();
 
 	// ImGui
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;		
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	ImGui_ImplWin32_Init(window);
-	ImGui_ImplDX12_Init(m_deviceResources->GetD3DDevice(), 
+	ImGui_ImplDX12_Init(m_deviceResources->GetD3DDevice(),
 		m_deviceResources->GetBackBufferCount(),
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		m_deviceResources->GetImGuiSRV()->GetCPUDescriptorHandleForHeapStart(),	// ¦bDeviceResource.h¥[¤JID3D12DescriptorHeap SRV
-		m_deviceResources->GetImGuiSRV()->GetGPUDescriptorHandleForHeapStart());	
+		m_deviceResources->GetImGuiSRV()->GetGPUDescriptorHandleForHeapStart());
 	ImGui::StyleColorsLight();
-	
-    // TODO: Change the timer settings if you want something other than the default variable timestep mode.
-    // e.g. for 60 FPS fixed timestep update logic, call:
-    /*
-    m_timer.SetFixedTimeStep(true);
-    m_timer.SetTargetElapsedSeconds(1.0 / 60);
-    */
+
+	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
+	// e.g. for 60 FPS fixed timestep update logic, call:
+	/*
+	m_timer.SetFixedTimeStep(true);
+	m_timer.SetTargetElapsedSeconds(1.0 / 60);
+	*/
 }
 
 #pragma region Frame Update
 // Executes the basic game loop.
 void Game::Tick()
 {
-    m_timer.Tick([&]()
-    {
-        Update(m_timer);
-    });
+	m_timer.Tick([&]()
+	{
+		Update(m_timer);
+	});
 
-    Render();
+	Render();
 }
 
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
-    PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update");
+	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update");
 
-    float elapsedTime = float(timer.GetElapsedSeconds());
+	float elapsedTime = float(timer.GetElapsedSeconds());
 
-    // TODO: Add your game logic here.
-    elapsedTime;
+	// TODO: Add your game logic here.
+	elapsedTime;
 
-    PIXEndEvent();
+	PIXEndEvent();
 }
 #pragma endregion
 
@@ -90,29 +94,101 @@ void Game::Update(DX::StepTimer const& timer)
 // Draws the scene.
 void Game::Render()
 {
-    // Don't try to render anything before the first Update.
-    if (m_timer.GetFrameCount() == 0)
-    {
-        return;
-    }
+	// Don't try to render anything before the first Update.
+	if (m_timer.GetFrameCount() == 0)
+	{
+		return;
+	}
 
-    // Prepare the command list to render a new frame.
-    m_deviceResources->Prepare();
-    Clear();
+	// Prepare the command list to render a new frame.
+	m_deviceResources->Prepare();
+	Clear();
 
-    auto commandList = m_deviceResources->GetCommandList();
-    PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
+	auto commandList = m_deviceResources->GetCommandList();
+	PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
-    // TODO: Add your rendering code here.
+	// TODO: Add your rendering code here.
 
 	// ImGui
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 
-	ImGui::NewFrame();	
+	ImGui::NewFrame();
 	ImGui::Begin("Main");
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("FPS: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
+
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Import Model"))
+			{
+				// Load Model Here!
+
+				std::wstring outputFile;
+
+				// Open File Dialog
+				// https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776913(v=vs.85)
+				IFileDialog *pfd = NULL;
+				HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog,
+					NULL,
+					CLSCTX_INPROC_SERVER,
+					IID_PPV_ARGS(&pfd));
+				if (SUCCEEDED(hr))
+				{
+					hr = pfd->Show(NULL);
+					if (SUCCEEDED(hr))
+					{
+						IShellItem *psiResult;
+						hr = pfd->GetResult(&psiResult);
+						if (SUCCEEDED(hr))
+						{
+							PWSTR pszFilePath = NULL;
+							hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH,
+								&pszFilePath);
+							if (SUCCEEDED(hr))
+							{
+								auto file_path = std::filesystem::path(std::wstring(pszFilePath)).remove_filename();
+								auto file_name = std::filesystem::path(std::wstring(pszFilePath)).stem();
+								outputFile = 
+									std::wstring(file_path) +
+									std::wstring(file_name) +
+									L".vbo";
+
+								std::wstring cmd =
+									std::wstring(std::filesystem::current_path()) +
+									L"/tool/meshconvert " +
+									std::wstring(pszFilePath) +
+									L" -vbo -n -op -o " + 
+									outputFile;
+
+								_wsystem(cmd.c_str());								
+							}
+							psiResult->Release();
+						}
+					}
+				}
+				pfd->Release();
+
+				// auto model = Model::CreateFromVBO(outputFile.c_str());
+
+			}
+			if (ImGui::MenuItem("Exit")) {}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("..."))
+		{
+			if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+			if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+			ImGui::Separator();
+			if (ImGui::MenuItem("Cut", "CTRL+X")) {}
+			if (ImGui::MenuItem("Copy", "CTRL+C")) {}
+			if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
 
 	auto srvDescriptor = m_deviceResources->GetImGuiSRV();
 	commandList->SetDescriptorHeaps(1, &srvDescriptor);
@@ -121,36 +197,36 @@ void Game::Render()
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 	// ImGui
 
-    PIXEndEvent(commandList);
+	PIXEndEvent(commandList);
 
-    // Show the new frame.
-    PIXBeginEvent(m_deviceResources->GetCommandQueue(), PIX_COLOR_DEFAULT, L"Present");
-    m_deviceResources->Present();
-    PIXEndEvent(m_deviceResources->GetCommandQueue());	
+	// Show the new frame.
+	PIXBeginEvent(m_deviceResources->GetCommandQueue(), PIX_COLOR_DEFAULT, L"Present");
+	m_deviceResources->Present();
+	PIXEndEvent(m_deviceResources->GetCommandQueue());
 	// m_deviceResources->WaitForGpu();
 }
 
 // Helper method to clear the back buffers.
 void Game::Clear()
 {
-    auto commandList = m_deviceResources->GetCommandList();
-    PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Clear");
+	auto commandList = m_deviceResources->GetCommandList();
+	PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Clear");
 
-    // Clear the views.
-    auto rtvDescriptor = m_deviceResources->GetRenderTargetView();
-    auto dsvDescriptor = m_deviceResources->GetDepthStencilView();
+	// Clear the views.
+	auto rtvDescriptor = m_deviceResources->GetRenderTargetView();
+	auto dsvDescriptor = m_deviceResources->GetDepthStencilView();
 
-    commandList->OMSetRenderTargets(1, &rtvDescriptor, FALSE, &dsvDescriptor);
-    commandList->ClearRenderTargetView(rtvDescriptor, Colors::White, 0, nullptr);
-    commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	commandList->OMSetRenderTargets(1, &rtvDescriptor, FALSE, &dsvDescriptor);
+	commandList->ClearRenderTargetView(rtvDescriptor, Colors::White, 0, nullptr);
+	commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-    // Set the viewport and scissor rect.
-    auto viewport = m_deviceResources->GetScreenViewport();
-    auto scissorRect = m_deviceResources->GetScissorRect();
-    commandList->RSSetViewports(1, &viewport);
-    commandList->RSSetScissorRects(1, &scissorRect);
+	// Set the viewport and scissor rect.
+	auto viewport = m_deviceResources->GetScreenViewport();
+	auto scissorRect = m_deviceResources->GetScissorRect();
+	commandList->RSSetViewports(1, &viewport);
+	commandList->RSSetScissorRects(1, &scissorRect);
 
-    PIXEndEvent(commandList);
+	PIXEndEvent(commandList);
 }
 #pragma endregion
 
@@ -158,48 +234,48 @@ void Game::Clear()
 // Message handlers
 void Game::OnActivated()
 {
-    // TODO: Game is becoming active window.
+	// TODO: Game is becoming active window.
 }
 
 void Game::OnDeactivated()
 {
-    // TODO: Game is becoming background window.
+	// TODO: Game is becoming background window.
 }
 
 void Game::OnSuspending()
 {
-    // TODO: Game is being power-suspended (or minimized).
+	// TODO: Game is being power-suspended (or minimized).
 }
 
 void Game::OnResuming()
 {
-    m_timer.ResetElapsedTime();
+	m_timer.ResetElapsedTime();
 
-    // TODO: Game is being power-resumed (or returning from minimize).
+	// TODO: Game is being power-resumed (or returning from minimize).
 }
 
 void Game::OnWindowMoved()
 {
-    auto r = m_deviceResources->GetOutputSize();
-    m_deviceResources->WindowSizeChanged(r.right, r.bottom);
+	auto r = m_deviceResources->GetOutputSize();
+	m_deviceResources->WindowSizeChanged(r.right, r.bottom);
 }
 
 void Game::OnWindowSizeChanged(int width, int height)
 {
-    if (!m_deviceResources->WindowSizeChanged(width, height))
-        return;
+	if (!m_deviceResources->WindowSizeChanged(width, height))
+		return;
 
-    CreateWindowSizeDependentResources();
+	CreateWindowSizeDependentResources();
 
-    // TODO: Game window is being resized.
+	// TODO: Game window is being resized.
 }
 
 // Properties
 void Game::GetDefaultSize(int& width, int& height) const
 {
-    // TODO: Change to desired default window size (note minimum size is 320x200).
-    width = 800;
-    height = 600;
+	// TODO: Change to desired default window size (note minimum size is 320x200).
+	width = 800;
+	height = 600;
 }
 #pragma endregion
 
@@ -207,27 +283,27 @@ void Game::GetDefaultSize(int& width, int& height) const
 // These are the resources that depend on the device.
 void Game::CreateDeviceDependentResources()
 {
-    auto device = m_deviceResources->GetD3DDevice();
+	auto device = m_deviceResources->GetD3DDevice();
 
-    // TODO: Initialize device dependent objects here (independent of window size).
-    device;
+	// TODO: Initialize device dependent objects here (independent of window size).
+	device;
 }
 
 // Allocate all memory resources that change on a window SizeChanged event.
 void Game::CreateWindowSizeDependentResources()
 {
-    // TODO: Initialize windows-size dependent objects here.
+	// TODO: Initialize windows-size dependent objects here.
 }
 
 void Game::OnDeviceLost()
 {
-    // TODO: Add Direct3D resource cleanup here.
+	// TODO: Add Direct3D resource cleanup here.
 }
 
 void Game::OnDeviceRestored()
 {
-    CreateDeviceDependentResources();
+	CreateDeviceDependentResources();
 
-    CreateWindowSizeDependentResources();
+	CreateWindowSizeDependentResources();
 }
 #pragma endregion

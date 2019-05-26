@@ -11,6 +11,9 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{c7baf834-484d-4f16-95fc-ab63ddc9744f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Graphic">
+      <UniqueIdentifier>{359a38c3-a799-4045-9368-4262384a5710}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -90,5 +93,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
