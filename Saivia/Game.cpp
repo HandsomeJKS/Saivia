@@ -122,7 +122,7 @@ void Game::Render()
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("Import Model"))
+			if (ImGui::MenuItem("Convert & Import Model"))
 			{
 				// Load Model Here!
 
