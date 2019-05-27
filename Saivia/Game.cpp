@@ -180,6 +180,7 @@ void Game::Render()
 				// Load Model Here!
 
 				std::wstring outputFile;
+				std::wstring outputFile_path;
 
 				// Open File Dialog
 				// https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776913(v=vs.85)
@@ -207,13 +208,15 @@ void Game::Render()
 								outputFile = 
 									std::wstring(file_path) +
 									std::wstring(file_name) +
-									L".vbo";
+									L".sdkmesh";
+								
+								outputFile_path = std::wstring(file_path);
 
 								std::wstring cmd =
 									std::wstring(std::filesystem::current_path()) +
 									L"/tool/meshconvert " +
 									std::wstring(pszFilePath) +
-									L" -vbo -n -op -o " + 
+									L" -sdkmesh -nodds -y -flipu -o " + 
 									outputFile;
 
 								_wsystem(cmd.c_str());								
@@ -227,7 +230,8 @@ void Game::Render()
 				m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
 			
 				// m_model = Model::CreateFromVBO(outputFile.c_str());
-				m_model = Model::CreateFromVBO(L"tool\\cup.vbo"); // 因為圖片位置不是在tool\cup.jpg 
+				// m_model = Model::CreateFromVBO(L"tool\\cup.vbo"); // 因為圖片位置不是在tool\cup.jpg 
+				m_model = Model::CreateFromSDKMESH(outputFile.c_str());
 
 				ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
 
@@ -235,6 +239,7 @@ void Game::Render()
 
 				m_model->LoadStaticBuffers(m_deviceResources->GetD3DDevice(), resourceUpload);
 
+				m_model->textureNames[0] = outputFile_path + m_model->textureNames[0];
 				m_modelResources = m_model->LoadTextures(m_deviceResources->GetD3DDevice(), resourceUpload);
 
 				m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
