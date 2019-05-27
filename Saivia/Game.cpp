@@ -226,49 +226,49 @@ void Game::Render()
 					}
 				}
 				pfd->Release();
-				
-				m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
-			
-				// m_model = Model::CreateFromVBO(outputFile.c_str());
-				// m_model = Model::CreateFromVBO(L"tool\\cup.vbo"); // 因為圖片位置不是在tool\cup.jpg 
-				m_model = Model::CreateFromSDKMESH(outputFile.c_str());
+				if (outputFile != L"") {
+					m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
 
-				ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
+					// m_model = Model::CreateFromVBO(outputFile.c_str());
+					// m_model = Model::CreateFromVBO(L"tool\\cup.vbo"); // 因為圖片位置不是在tool\cup.jpg 
+					m_model = Model::CreateFromSDKMESH(outputFile.c_str());
 
-				resourceUpload.Begin();
+					ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
 
-				m_model->LoadStaticBuffers(m_deviceResources->GetD3DDevice(), resourceUpload);
+					resourceUpload.Begin();
 
-				m_model->textureNames[0] = outputFile_path + m_model->textureNames[0];
-				m_modelResources = m_model->LoadTextures(m_deviceResources->GetD3DDevice(), resourceUpload);
+					m_model->LoadStaticBuffers(m_deviceResources->GetD3DDevice(), resourceUpload);
 
-				m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
+					m_model->textureNames[0] = outputFile_path + m_model->textureNames[0];
+					m_modelResources = m_model->LoadTextures(m_deviceResources->GetD3DDevice(), resourceUpload);
 
-				auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
+					m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
 
-				uploadResourcesFinished.wait();
+					auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
 
-				// RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
-				RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+					uploadResourcesFinished.wait();
 
-				EffectPipelineStateDescription pd(
-					nullptr,
-					CommonStates::Opaque,
-					CommonStates::DepthDefault,
-					CommonStates::CullClockwise,
-					rtState);
+					// RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+					RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
 
-				EffectPipelineStateDescription pdAlpha(
-					nullptr,
-					CommonStates::AlphaBlend,
-					CommonStates::DepthDefault,
-					CommonStates::CullClockwise,
-					rtState);
+					EffectPipelineStateDescription pd(
+						nullptr,
+						CommonStates::Opaque,
+						CommonStates::DepthDefault,
+						CommonStates::CullClockwise,
+						rtState);
 
-				m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pdAlpha);
+					EffectPipelineStateDescription pdAlpha(
+						nullptr,
+						CommonStates::AlphaBlend,
+						CommonStates::DepthDefault,
+						CommonStates::CullClockwise,
+						rtState);
 
-				m_world = DirectX::SimpleMath::Matrix::Identity;
-				
+					m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pdAlpha);
+
+					m_world = DirectX::SimpleMath::Matrix::Identity;
+				}
 			}
 			if (ImGui::MenuItem("Exit")) { Load_Model = true; }
 			ImGui::EndMenu();
