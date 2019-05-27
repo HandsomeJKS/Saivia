@@ -54,6 +54,9 @@ private:
     // Rendering loop timer.
     DX::StepTimer                           m_timer;
 
+	// Necessary for DXTK12 !!
+	std::unique_ptr<DirectX::GraphicsMemory> m_graphicsMemory;
+
 	// Model
 	DirectX::SimpleMath::Matrix m_world;
 	DirectX::SimpleMath::Matrix m_view;

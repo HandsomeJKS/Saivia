@@ -56,6 +56,8 @@ void Game::Initialize(HWND window, int width, int height)
 		m_deviceResources->GetImGuiSRV()->GetGPUDescriptorHandleForHeapStart());
 	ImGui::StyleColorsLight();
 
+	m_graphicsMemory = std::make_unique<GraphicsMemory>(m_deviceResources->GetD3DDevice());
+	/*
 	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
 
 	m_model = Model::CreateFromSDKMESH(L"cup.sdkmesh", m_deviceResources->GetD3DDevice());
@@ -74,7 +76,8 @@ void Game::Initialize(HWND window, int width, int height)
 
 	uploadResourcesFinished.wait();
 
-	RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+	// RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+	RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
 
 	EffectPipelineStateDescription pd(
 		nullptr,
@@ -94,7 +97,7 @@ void Game::Initialize(HWND window, int width, int height)
 
 	m_world = DirectX::SimpleMath::Matrix::Identity;
 	Load_Model = false;
-
+	*/
 	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
 	// e.g. for 60 FPS fixed timestep update logic, call:
 	/*
@@ -220,11 +223,11 @@ void Game::Render()
 					}
 				}
 				pfd->Release();
-				/*
+				
 				m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
 			
 				// m_model = Model::CreateFromVBO(outputFile.c_str());
-				m_model = Model::CreateFromSDKMESH(L"D:\\Engine_Project\\Saivia\\Saivia\\tool\\cup.sdkmesh");
+				m_model = Model::CreateFromSDKMESH(L"cup.sdkmesh");
 
 				ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
 
@@ -240,7 +243,8 @@ void Game::Render()
 
 				uploadResourcesFinished.wait();
 
-				RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+				// RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+				RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
 
 				EffectPipelineStateDescription pd(
 					nullptr,
@@ -259,7 +263,7 @@ void Game::Render()
 				m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pdAlpha);
 
 				m_world = DirectX::SimpleMath::Matrix::Identity;
-				*/
+				
 			}
 			if (ImGui::MenuItem("Exit")) { Load_Model = true; }
 			ImGui::EndMenu();
@@ -290,7 +294,8 @@ void Game::Render()
 	PIXBeginEvent(m_deviceResources->GetCommandQueue(), PIX_COLOR_DEFAULT, L"Present");
 	m_deviceResources->Present();
 	PIXEndEvent(m_deviceResources->GetCommandQueue());
-	// m_deviceResources->WaitForGpu();
+
+	m_graphicsMemory->Commit(m_deviceResources->GetCommandQueue());
 }
 
 // Helper method to clear the back buffers.
@@ -395,6 +400,8 @@ void Game::OnDeviceLost()
 	m_modelResources.reset();
 	m_model.reset();
 	m_modelNormal.clear();
+
+	m_graphicsMemory.reset();
 }
 
 void Game::OnDeviceRestored()

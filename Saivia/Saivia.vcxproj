@@ -111,7 +111,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <FloatingPointModel>Fast</FloatingPointModel>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Engine_Project\DirectXTK12-master\Inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Engine_Project\DirectXTK12-master\Inc;D:\Engine_Proj\DirectXTK12-master\Inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
