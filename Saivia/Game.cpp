@@ -227,7 +227,7 @@ void Game::Render()
 				m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
 			
 				// m_model = Model::CreateFromVBO(outputFile.c_str());
-				m_model = Model::CreateFromSDKMESH(L"cup.sdkmesh");
+				m_model = Model::CreateFromVBO(L"tool\\cup.vbo"); // 因為圖片位置不是在tool\cup.jpg 
 
 				ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
 
