@@ -120,7 +120,7 @@ void Game::Render()
 		for (int i = 0; i < 50; i++) {
 			m_world = DirectX::SimpleMath::Matrix::Identity;
 			m_world *= DirectX::SimpleMath::Matrix::CreateTranslation(
-				DirectX::SimpleMath::Vector3{ static_cast<float>(i),0.f,0.f });
+				DirectX::SimpleMath::Vector3{ 0.f, 0.f, static_cast<float>(i) });
 			Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
 			m_model->Draw(commandList, m_modelNormal.cbegin());
 		}
@@ -207,7 +207,11 @@ void Game::Render()
 
 					if (!m_model->textureNames.empty())
 					{
-						m_model->textureNames[0] = outputFile_path + m_model->textureNames[0];
+						for (auto &texName : m_model->textureNames)
+						{
+							texName = outputFile_path + texName;
+						}
+						// m_model->textureNames[0] = outputFile_path + m_model->textureNames[0];
 						m_modelResources = m_model->LoadTextures(m_deviceResources->GetD3DDevice(), resourceUpload);
 
 						m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
