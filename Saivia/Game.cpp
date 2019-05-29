@@ -117,7 +117,7 @@ void Game::Render()
 		ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
 		commandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
-		for (int i = 0; i < 200; i++) {
+		for (int i = 0; i < 50; i++) {
 			m_world = DirectX::SimpleMath::Matrix::Identity;
 			m_world *= DirectX::SimpleMath::Matrix::CreateTranslation(
 				DirectX::SimpleMath::Vector3{ static_cast<float>(i),0.f,0.f });
@@ -180,7 +180,7 @@ void Game::Render()
 									std::wstring(std::filesystem::current_path()) +
 									L"/tool/meshconvert " +
 									std::wstring(pszFilePath) +
-									L" -sdkmesh -nodds -y -flipu -o " + 
+									L" -sdkmesh -nodds -y -flipv -o " + 
 									outputFile;
 
 								_wsystem(cmd.c_str());								
