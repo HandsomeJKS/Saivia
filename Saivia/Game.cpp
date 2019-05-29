@@ -57,47 +57,7 @@ void Game::Initialize(HWND window, int width, int height)
 	ImGui::StyleColorsLight();
 
 	m_graphicsMemory = std::make_unique<GraphicsMemory>(m_deviceResources->GetD3DDevice());
-	/*
-	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
-
-	m_model = Model::CreateFromSDKMESH(L"cup.sdkmesh", m_deviceResources->GetD3DDevice());
-
-	ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
-
-	resourceUpload.Begin();
-
-	m_model->LoadStaticBuffers(m_deviceResources->GetD3DDevice(), resourceUpload);
-
-	m_modelResources = m_model->LoadTextures(m_deviceResources->GetD3DDevice(), resourceUpload);
-
-	m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
-
-	auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
-
-	uploadResourcesFinished.wait();
-
-	// RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
-	RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
-
-	EffectPipelineStateDescription pd(
-		nullptr,
-		CommonStates::Opaque,
-		CommonStates::DepthDefault,
-		CommonStates::CullClockwise,
-		rtState);
-
-	EffectPipelineStateDescription pdAlpha(
-		nullptr,
-		CommonStates::AlphaBlend,
-		CommonStates::DepthDefault,
-		CommonStates::CullClockwise,
-		rtState);
-
-	m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pdAlpha);
-
-	m_world = DirectX::SimpleMath::Matrix::Identity;
-	Load_Model = false;
-	*/
+	
 	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
 	// e.g. for 60 FPS fixed timestep update logic, call:
 	/*
@@ -157,9 +117,13 @@ void Game::Render()
 		ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
 		commandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
-		Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
-
-		m_model->Draw(commandList, m_modelNormal.cbegin());
+		for (int i = 0; i < 200; i++) {
+			m_world = DirectX::SimpleMath::Matrix::Identity;
+			m_world *= DirectX::SimpleMath::Matrix::CreateTranslation(
+				DirectX::SimpleMath::Vector3{ static_cast<float>(i),0.f,0.f });
+			Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
+			m_model->Draw(commandList, m_modelNormal.cbegin());
+		}
 	}
 
 	// ImGui
