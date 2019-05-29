@@ -1,0 +1,17 @@
+# File produced by Open Asset Import Library (http://www.assimp.sf.net)
+# (assimp v3.1.123720346)
+
+newmtl JoinedMaterial_#1
+kd 1 1 1
+ks 0 0 0
+ke 0 0 0
+illum 1
+map_kd textures/Ballast.png
+
+newmtl material56
+kd 1 1 1
+ks 0 0 0
+ke 0 0 0
+illum 1
+map_kd textures/Tie.png
+
