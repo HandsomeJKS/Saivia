@@ -1,0 +1,25 @@
+{
+  "Model": {
+    "Location": [
+      "D:\\Models\\Model_A",
+      "D:\\Models\\Model_B",
+      "D:\\Models\\Model_C"
+    ]
+  },
+  "Texture": {},
+  "Railway": [
+    {
+      "Name": "Main_Railway",
+      "Data": [
+        {
+          "Command": "Straight",
+          "parameter": [100]
+        },
+        {
+          "Command": "Curve",
+          "parameter": ["Right", 50]
+        }
+      ]
+    }
+  ]
+}

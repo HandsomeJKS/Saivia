@@ -67,5 +67,7 @@ private:
 	std::unique_ptr<DirectX::EffectTextureFactory> m_modelResources;
 	std::unique_ptr<DirectX::Model> m_model;
 	std::vector<std::shared_ptr<DirectX::IEffect>> m_modelNormal;
-	bool Load_Model = false;
+
+	// ImGui
+	bool ModelUI = false;
 };

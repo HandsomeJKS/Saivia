@@ -135,6 +135,10 @@ void Game::Render()
 	ImGui::Text("FPS: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
 
+	if (ModelUI) {
+		ImGui::Begin("Model");
+		ImGui::End();
+	}
 	if (ImGui::BeginMainMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
@@ -234,7 +238,15 @@ void Game::Render()
 					m_world = DirectX::SimpleMath::Matrix::Identity;
 				}
 			}
-			if (ImGui::MenuItem("Exit")) { Load_Model = true; }
+			if (ImGui::MenuItem("Exit")) { 				
+				
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Model")) 
+		{
+			if (ImGui::MenuItem("Convert & Import Model")) { ModelUI = true; }
+			if (ImGui::MenuItem("Import")) {}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("..."))
