@@ -70,4 +70,7 @@ private:
 
 	// ImGui
 	bool ModelUI = false;
+
+	// json
+	nlohmann::json jsonEngine;
 };

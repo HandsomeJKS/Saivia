@@ -145,6 +145,18 @@ void Game::Render()
 		{
 			if (ImGui::MenuItem("Convert & Import Model"))
 			{
+				
+			}
+			if (ImGui::MenuItem("Exit")) { 				
+				
+			}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Model"))
+		{
+			if (ImGui::MenuItem("Convert & Import Model")) {
+				// ModelUI = true; 
 				// Load Model Here!
 
 				std::wstring outputFile;
@@ -173,21 +185,21 @@ void Game::Render()
 							{
 								auto file_path = std::filesystem::path(std::wstring(pszFilePath)).remove_filename();
 								auto file_name = std::filesystem::path(std::wstring(pszFilePath)).stem();
-								outputFile = 
+								outputFile =
 									std::wstring(file_path) +
 									std::wstring(file_name) +
 									L".sdkmesh";
-								
+
 								outputFile_path = std::wstring(file_path);
 
 								std::wstring cmd =
 									std::wstring(std::filesystem::current_path()) +
 									L"/tool/meshconvert " +
 									std::wstring(pszFilePath) +
-									L" -sdkmesh -nodds -y -flipv -o " + 
+									L" -sdkmesh -nodds -y -flipv -o " +
 									outputFile;
 
-								_wsystem(cmd.c_str());								
+								_wsystem(cmd.c_str());
 							}
 							psiResult->Release();
 						}
@@ -248,15 +260,17 @@ void Game::Render()
 					}
 				}
 			}
-			if (ImGui::MenuItem("Exit")) { 				
-				
-			}
+			if (ImGui::MenuItem("Import")) {}
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Model")) 
+
+		if (ImGui::BeginMenu("Scene")) 
 		{
-			if (ImGui::MenuItem("Convert & Import Model")) { ModelUI = true; }
-			if (ImGui::MenuItem("Import")) {}
+			if (ImGui::MenuItem("Load Scene")) { 
+				// 未來考慮用winrt/c++ 的hstring
+				std::ifstream jsonData("Assets\\World.json");				
+				jsonData >> jsonEngine;
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("..."))

@@ -52,6 +52,8 @@
 #include <stdexcept>
 #include <string>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 
 #include <stdio.h>
 
@@ -83,6 +85,9 @@
 #include "SpriteFont.h"
 #include "VertexTypes.h"
 #include "WICTextureLoader.h"
+
+// json
+#include "JSON/json.hpp"
 
 // To use graphics and CPU markup events with the latest version of PIX, change this to include <pix3.h>
 // then add the NuGet package WinPixEventRuntime to the project.
