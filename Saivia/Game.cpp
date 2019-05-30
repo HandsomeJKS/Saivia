@@ -11,12 +11,23 @@ using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
+namespace
+{	
+	const XMVECTORF32 START_POSITION = { 0.f, 1.f, 0.f, 0.f };
+	const float ROTATION_GAIN = 0.004f;
+	const float MOVEMENT_GAIN = 0.07f;
+}
+
 static HWND hWnd;
 
-Game::Game() noexcept(false)
+Game::Game() noexcept(false) :
+	m_pitch(0),
+	m_yaw(0) 
 {
 	m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_deviceResources->RegisterDeviceNotify(this);
+
+	m_cameraPos = START_POSITION.v;
 }
 
 Game::~Game()
@@ -56,8 +67,14 @@ void Game::Initialize(HWND window, int width, int height)
 		m_deviceResources->GetImGuiSRV()->GetGPUDescriptorHandleForHeapStart());
 	ImGui::StyleColorsLight();
 
+	// GraphicsMemory(for Model)
 	m_graphicsMemory = std::make_unique<GraphicsMemory>(m_deviceResources->GetD3DDevice());
 	
+	// Controller
+	m_keyboard = std::make_unique<Keyboard>();
+	m_mouse = std::make_unique<Mouse>();
+	m_mouse->SetWindow(window);
+
 	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
 	// e.g. for 60 FPS fixed timestep update logic, call:
 	/*
@@ -88,6 +105,75 @@ void Game::Update(DX::StepTimer const& timer)
 	// TODO: Add your game logic here.
 	elapsedTime;
 
+	// Controller
+	auto kb = m_keyboard->GetState();
+	if (kb.Escape)
+	{
+		ExitGame();
+	}
+
+	if (kb.Home)
+	{
+		m_cameraPos = START_POSITION.v;
+		m_pitch = m_yaw = 0;
+	}
+
+	DirectX::SimpleMath::Vector3 move = DirectX::SimpleMath::Vector3::Zero;
+
+	if (kb.Up || kb.W)
+		move.z += 1.f;
+
+	if (kb.Down || kb.S)
+		move.z -= 1.f;
+
+	if (kb.Left || kb.A)
+		move.x += 1.f;
+
+	if (kb.Right || kb.D)
+		move.x -= 1.f;
+
+	if (kb.PageUp || kb.Space)
+		move.y += 1.f;
+
+	if (kb.PageDown || kb.X)
+		move.y -= 1.f;
+
+	DirectX::SimpleMath::Quaternion q = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(m_yaw, m_pitch, 0.f);
+
+	move = DirectX::SimpleMath::Vector3::Transform(move, q);
+
+	move *= MOVEMENT_GAIN;
+
+	m_cameraPos += move;
+
+	auto mouse = m_mouse->GetState();
+	if (mouse.positionMode == Mouse::MODE_RELATIVE)
+	{
+		DirectX::SimpleMath::Vector3 delta = DirectX::SimpleMath::Vector3(float(mouse.x), float(mouse.y), 0.f)
+			* ROTATION_GAIN;
+
+		m_pitch -= delta.y;
+		m_yaw -= delta.x;
+
+		// limit pitch to straight up or straight down
+		// with a little fudge-factor to avoid gimbal lock
+		float limit = XM_PI / 2.0f - 0.01f;
+		m_pitch = std::max(-limit, m_pitch);
+		m_pitch = std::min(+limit, m_pitch);
+
+		// keep longitude in sane range by wrapping
+		if (m_yaw > XM_PI)
+		{
+			m_yaw -= XM_PI * 2.0f;
+		}
+		else if (m_yaw < -XM_PI)
+		{
+			m_yaw += XM_PI * 2.0f;
+		}
+	}
+
+	m_mouse->SetMode(mouse.leftButton ? Mouse::MODE_RELATIVE : Mouse::MODE_ABSOLUTE);
+
 	PIXEndEvent();
 }
 #pragma endregion
@@ -111,6 +197,17 @@ void Game::Render()
 
 	// TODO: Add your rendering code here.
 
+	// Camera
+	float y = sinf(m_pitch);
+	float r = cosf(m_pitch);
+	float z = r * cosf(m_yaw);
+	float x = r * sinf(m_yaw);
+
+	DirectX::SimpleMath::Vector3 lookAt = m_cameraPos + DirectX::SimpleMath::Vector3(x, y, z);
+
+	m_view = XMMatrixLookAtRH(m_cameraPos, lookAt, DirectX::SimpleMath::Vector3::Up);
+
+
 	// Draw Model
 	if (m_model != nullptr)
 	{
@@ -133,6 +230,8 @@ void Game::Render()
 	ImGui::NewFrame();
 	ImGui::Begin("Main");
 	ImGui::Text("FPS: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Camera Position: x: %.3f y: %.3f z: %.3f ", m_cameraPos.x, m_cameraPos.y, m_cameraPos.z);
+	ImGui::Text("Look At: x: %.3f y: %.3f z: %.3f ", lookAt.x, lookAt.y, lookAt.z);
 	ImGui::End();
 
 	if (ModelUI) {
@@ -142,13 +241,9 @@ void Game::Render()
 	if (ImGui::BeginMainMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
-		{
-			if (ImGui::MenuItem("Convert & Import Model"))
-			{
-				
-			}
+		{			
 			if (ImGui::MenuItem("Exit")) { 				
-				
+				ExitGame();
 			}
 			ImGui::EndMenu();
 		}
@@ -391,10 +486,10 @@ void Game::CreateWindowSizeDependentResources()
 {
 	// TODO: Initialize windows-size dependent objects here.
 	auto RT_Desc = m_deviceResources->GetRenderTarget()->GetDesc();
-	m_view = DirectX::SimpleMath::Matrix::CreateLookAt(DirectX::SimpleMath::Vector3(2.f, 2.f, 2.f),
-		DirectX::SimpleMath::Vector3::Zero, DirectX::SimpleMath::Vector3::UnitY);
+	/*m_view = DirectX::SimpleMath::Matrix::CreateLookAt(DirectX::SimpleMath::DirectX::SimpleMath::Vector3(2.f, 2.f, 2.f),
+		DirectX::SimpleMath::DirectX::SimpleMath::Vector3::Zero, DirectX::SimpleMath::DirectX::SimpleMath::Vector3::UnitY);*/
 	m_proj = DirectX::SimpleMath::Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
-		float(RT_Desc.Width) / float(RT_Desc.Height), 0.1f, 10.f);
+		float(RT_Desc.Width) / float(RT_Desc.Height), 0.1f, 500.f);
 }
 
 void Game::OnDeviceLost()

@@ -60,7 +60,7 @@ private:
 	// Model
 	DirectX::SimpleMath::Matrix m_world;
 	DirectX::SimpleMath::Matrix m_view;
-	DirectX::SimpleMath::Matrix m_proj;
+	// DirectX::SimpleMath::Matrix m_proj;
 
 	std::unique_ptr<DirectX::CommonStates> m_states;
 	std::unique_ptr<DirectX::EffectFactory> m_fxFactory;
@@ -73,4 +73,14 @@ private:
 
 	// json
 	nlohmann::json jsonEngine;
+
+	// Controller
+	std::unique_ptr<DirectX::Keyboard> m_keyboard;
+	std::unique_ptr<DirectX::Mouse> m_mouse;
+
+	// Camera
+	DirectX::SimpleMath::Matrix m_proj;
+	DirectX::SimpleMath::Vector3 m_cameraPos;
+	float m_pitch;
+	float m_yaw;
 };
