@@ -48,6 +48,9 @@ private:
     void CreateDeviceDependentResources();
     void CreateWindowSizeDependentResources();
 
+	// Parser
+	void SceneParser();
+
     // Device resources.
     std::unique_ptr<DX::DeviceResources>    m_deviceResources;
 
@@ -83,4 +86,13 @@ private:
 	DirectX::SimpleMath::Vector3 m_cameraPos;
 	float m_pitch;
 	float m_yaw;
+
+	// Railway
+
+	std::vector<DirectX::SimpleMath::Matrix> RailwayDataList;
+
+	DirectX::SimpleMath::Vector3 nowPos;
+	DirectX::SimpleMath::Vector3 nowT;
+	DirectX::SimpleMath::Vector3 nowB;
+	DirectX::SimpleMath::Vector3 nowN;
 };

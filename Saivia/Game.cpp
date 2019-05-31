@@ -8,12 +8,13 @@
 extern void ExitGame();
 
 using namespace DirectX;
+using namespace DirectX::SimpleMath;
 
 using Microsoft::WRL::ComPtr;
 
 namespace
 {	
-	const XMVECTORF32 START_POSITION = { 0.f, 1.f, 0.f, 0.f };
+	const XMVECTORF32 START_POSITION = { 0.f, 1.f, -4.f, 0.f };
 	const float ROTATION_GAIN = 0.004f;
 	const float MOVEMENT_GAIN = 0.07f;
 }
@@ -22,12 +23,17 @@ static HWND hWnd;
 
 Game::Game() noexcept(false) :
 	m_pitch(0),
-	m_yaw(0) 
+	m_yaw(0)
 {
 	m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_deviceResources->RegisterDeviceNotify(this);
 
 	m_cameraPos = START_POSITION.v;
+
+	nowPos = { 0.f, 0.f, 0.f };
+	nowT = { 0.f, 0.f, 1.f };
+	nowB = { 1.f, 0.f, 0.f };
+	nowN = { 0.f, 1.f, 0.f };
 }
 
 Game::~Game()
@@ -118,7 +124,18 @@ void Game::Update(DX::StepTimer const& timer)
 		m_pitch = m_yaw = 0;
 	}
 
-	DirectX::SimpleMath::Vector3 move = DirectX::SimpleMath::Vector3::Zero;
+	if (kb.R)
+	{
+		// Reload Scene
+
+		// ModelList Reset!!
+		RailwayDataList.clear();
+		std::ifstream jsonData("Assets\\World.json");
+		jsonData >> jsonEngine;
+		SceneParser();
+	}
+
+	Vector3 move = Vector3::Zero;
 
 	if (kb.Up || kb.W)
 		move.z += 1.f;
@@ -138,9 +155,9 @@ void Game::Update(DX::StepTimer const& timer)
 	if (kb.PageDown || kb.X)
 		move.y -= 1.f;
 
-	DirectX::SimpleMath::Quaternion q = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(m_yaw, m_pitch, 0.f);
+	Quaternion q = Quaternion::CreateFromYawPitchRoll(m_yaw, m_pitch, 0.f);
 
-	move = DirectX::SimpleMath::Vector3::Transform(move, q);
+	move = Vector3::Transform(move, q);
 
 	move *= MOVEMENT_GAIN;
 
@@ -149,7 +166,7 @@ void Game::Update(DX::StepTimer const& timer)
 	auto mouse = m_mouse->GetState();
 	if (mouse.positionMode == Mouse::MODE_RELATIVE)
 	{
-		DirectX::SimpleMath::Vector3 delta = DirectX::SimpleMath::Vector3(float(mouse.x), float(mouse.y), 0.f)
+		Vector3 delta = Vector3(float(mouse.x), float(mouse.y), 0.f)
 			* ROTATION_GAIN;
 
 		m_pitch -= delta.y;
@@ -203,9 +220,9 @@ void Game::Render()
 	float z = r * cosf(m_yaw);
 	float x = r * sinf(m_yaw);
 
-	DirectX::SimpleMath::Vector3 lookAt = m_cameraPos + DirectX::SimpleMath::Vector3(x, y, z);
+	Vector3 lookAt = m_cameraPos + Vector3(x, y, z);
 
-	m_view = XMMatrixLookAtRH(m_cameraPos, lookAt, DirectX::SimpleMath::Vector3::Up);
+	m_view = XMMatrixLookAtRH(m_cameraPos, lookAt, Vector3::Up);
 
 
 	// Draw Model
@@ -213,12 +230,17 @@ void Game::Render()
 	{
 		ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
 		commandList->SetDescriptorHeaps(_countof(heaps), heaps);
-
-		for (int i = 0; i < 50; i++) {
-			m_world = DirectX::SimpleMath::Matrix::Identity;
-			m_world *= DirectX::SimpleMath::Matrix::CreateTranslation(
-				DirectX::SimpleMath::Vector3{ 0.f, 0.f, static_cast<float>(i) });
-			Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
+		/*
+		m_world = Matrix(nowB, nowN, nowT);
+		m_world *= DirectX::SimpleMath::Matrix::CreateTranslation(
+			DirectX::SimpleMath::Vector3{ 0.f, 0.f, 0.f });
+		Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
+		m_model->Draw(commandList, m_modelNormal.cbegin());	
+		*/
+		for (auto Data_World : RailwayDataList)
+		{
+			m_world = Matrix::Identity;
+			Model::UpdateEffectMatrices(m_modelNormal, Data_World, m_view, m_proj);
 			m_model->Draw(commandList, m_modelNormal.cbegin());
 		}
 	}
@@ -346,7 +368,7 @@ void Game::Render()
 
 						m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pdAlpha);
 
-						m_world = DirectX::SimpleMath::Matrix::Identity;
+						m_world = Matrix::Identity;
 					}
 					else
 					{
@@ -365,6 +387,7 @@ void Game::Render()
 				// 未來考慮用winrt/c++ 的hstring
 				std::ifstream jsonData("Assets\\World.json");				
 				jsonData >> jsonEngine;
+				SceneParser();
 			}
 			ImGui::EndMenu();
 		}
@@ -486,9 +509,9 @@ void Game::CreateWindowSizeDependentResources()
 {
 	// TODO: Initialize windows-size dependent objects here.
 	auto RT_Desc = m_deviceResources->GetRenderTarget()->GetDesc();
-	/*m_view = DirectX::SimpleMath::Matrix::CreateLookAt(DirectX::SimpleMath::DirectX::SimpleMath::Vector3(2.f, 2.f, 2.f),
-		DirectX::SimpleMath::DirectX::SimpleMath::Vector3::Zero, DirectX::SimpleMath::DirectX::SimpleMath::Vector3::UnitY);*/
-	m_proj = DirectX::SimpleMath::Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
+	/*m_view = Matrix::CreateLookAt(Vector3(2.f, 2.f, 2.f),
+		Vector3::Zero, Vector3::UnitY);*/
+	m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
 		float(RT_Desc.Width) / float(RT_Desc.Height), 0.1f, 500.f);
 }
 
@@ -511,3 +534,90 @@ void Game::OnDeviceRestored()
 	CreateWindowSizeDependentResources();
 }
 #pragma endregion
+
+void Game::SceneParser()
+{
+	auto railwayList = jsonEngine["Railway"];
+	auto mainRW_Data = railwayList[0]["Data"];
+	for (auto data : mainRW_Data)
+	{
+		if (data["Command"] == "Straight")
+		{
+			for (int i = 0; i < data["Parameter"][0]; i++)
+			{
+				
+				nowT.Normalize();
+				Vector3 pos = nowPos + nowT * i;
+				Vector3 T = nowT;				
+				Vector3 N = nowN;
+				Vector3 B = nowB = T.Cross(N);
+				
+				auto tmpWorld = Matrix(-B, N, T);
+				tmpWorld *= Matrix::CreateTranslation(
+					Vector3{ pos.x, pos.y, pos.z });
+
+				RailwayDataList.push_back(std::move(tmpWorld));
+			}
+		}
+		else if (data["Command"] == "Curve")
+		{
+
+		}
+		else
+		{
+			MessageBox(hWnd, L"Railway data have invaild command!!", L"ERROR", NULL);
+		}
+	}
+
+	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
+
+	m_model = Model::CreateFromSDKMESH(L"Assets/Ballast/ballast.sdkmesh");
+
+	ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
+
+	resourceUpload.Begin();
+
+	m_model->LoadStaticBuffers(m_deviceResources->GetD3DDevice(), resourceUpload);
+
+	if (!m_model->textureNames.empty())
+	{
+		for (auto &texName : m_model->textureNames)
+		{
+			texName = L"Assets/Ballast/" + texName;
+		}
+		// m_model->textureNames[0] = outputFile_path + m_model->textureNames[0];
+		m_modelResources = m_model->LoadTextures(m_deviceResources->GetD3DDevice(), resourceUpload);
+
+		m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
+
+		auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
+
+		uploadResourcesFinished.wait();
+
+		// RenderTargetState rtState(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+		RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+
+		EffectPipelineStateDescription pd(
+			nullptr,
+			CommonStates::Opaque,
+			CommonStates::DepthDefault,
+			CommonStates::CullClockwise,
+			rtState);
+
+		EffectPipelineStateDescription pdAlpha(
+			nullptr,
+			CommonStates::AlphaBlend,
+			CommonStates::DepthDefault,
+			CommonStates::CullClockwise,
+			rtState);
+
+		m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pdAlpha);
+
+		m_world = Matrix::Identity;
+	}
+	else
+	{
+		m_model.reset();
+		MessageBox(hWnd, L"Model NO Texture!!", L"Error", NULL);
+	}
+}
