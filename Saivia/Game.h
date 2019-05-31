@@ -86,6 +86,7 @@ private:
 	DirectX::SimpleMath::Vector3 m_cameraPos;
 	float m_pitch;
 	float m_yaw;
+	bool isCameraLock = false; // Lock on Railway
 
 	// Railway
 

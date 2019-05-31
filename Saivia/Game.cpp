@@ -138,6 +138,16 @@ void Game::Update(DX::StepTimer const& timer)
 		SceneParser();
 	}
 
+	if (kb.L)
+	{
+		isCameraLock = true;
+	}
+
+	if (kb.F)
+	{
+		isCameraLock = false;
+	}
+
 	Vector3 move = Vector3::Zero;
 
 	if (kb.Up || kb.W)
