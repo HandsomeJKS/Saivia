@@ -13,7 +13,7 @@
       "Data": [
         {
           "Command": "Straight",
-          "Parameter": [10]
+          "Parameter": [20]
         },
         {
           "Command": "Curve",

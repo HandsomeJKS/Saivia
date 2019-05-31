@@ -124,12 +124,15 @@ void Game::Update(DX::StepTimer const& timer)
 		m_pitch = m_yaw = 0;
 	}
 
-	if (kb.R)
+	if (kb.F5)
 	{
 		// Reload Scene
 
+		m_deviceResources->WaitForGpu();
 		// ModelList Reset!!
 		RailwayDataList.clear();
+		jsonEngine.clear();
+
 		std::ifstream jsonData("Assets\\World.json");
 		jsonData >> jsonEngine;
 		SceneParser();
