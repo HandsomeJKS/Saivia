@@ -81,6 +81,22 @@ void Game::Initialize(HWND window, int width, int height)
 	m_mouse = std::make_unique<Mouse>();
 	m_mouse->SetWindow(window);
 
+
+	// ref position geometirc
+	RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D32_FLOAT);
+
+	EffectPipelineStateDescription pd(
+		&GeometricPrimitive::VertexType::InputLayout,
+		CommonStates::Opaque,
+		CommonStates::DepthDefault,
+		CommonStates::CullNone,
+		rtState);
+
+	m_effect = std::make_unique<BasicEffect>(m_deviceResources->GetD3DDevice(), EffectFlags::Lighting, pd);
+	m_effect->EnableDefaultLighting();
+
+	m_shape = GeometricPrimitive::CreateCube(0.5f);	
+
 	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
 	// e.g. for 60 FPS fixed timestep update logic, call:
 	/*
@@ -243,6 +259,11 @@ void Game::Render()
 
 	m_view = XMMatrixLookAtRH(m_cameraPos, lookAt, Vector3::Up);
 
+	/* Render Cube for ref position*/
+	auto cubeWorld = Matrix::Identity;
+	m_effect->SetMatrices(cubeWorld, m_view, m_proj);
+	m_effect->Apply(commandList);
+	m_shape->Draw(commandList);
 
 	// Draw Model
 	if (m_model != nullptr)
@@ -558,6 +579,9 @@ void Game::OnDeviceLost()
 	m_model.reset();
 	m_modelNormal.clear();
 
+	m_shape.reset();
+	m_effect.reset();
+
 	m_graphicsMemory.reset();
 }
 
@@ -627,7 +651,7 @@ void Game::SceneParser()
 
 			// 進入曲線的座標，要往前一格(感覺不太合理..)
 			currentT.Normalize();
-			Pos = currentPos + currentT * 1;			
+			// Pos = currentPos + currentT * 1;			
 
 			// 利用半徑找到中心點
 			// 中心點座標 = 單位B乘上半徑R + 目前的座標
@@ -654,11 +678,13 @@ void Game::SceneParser()
 				T.Normalize();				
 				N = Vector3::Transform(N, Matrix::CreateFromAxisAngle(T, -sin(cant)));
 				B = -N.Cross(T);
+				B.Normalize();
+				N.Normalize();
 
 				/* 放置物件 */
-				auto world = Matrix(-B, N, T);
+				auto world = Matrix(-B, N, T) * Matrix::Identity;
 				world *= Matrix::CreateTranslation(Vector3{ Pos.x, Pos.y, Pos.z })
-					* Matrix::CreateScale(Vector3{ 1.f, 1.f, scale }); // 在原點進行旋轉
+				* Matrix::CreateScale(Vector3{ 1.f, 1.f, scale }); // 在原點進行旋轉
 				
 				RailwayDataList.push_back(std::move(world));
 				auto tmpPos = Pos;

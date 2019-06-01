@@ -99,4 +99,8 @@ private:
 	DirectX::SimpleMath::Vector3 currentN;
 
 	bool RWItemUI = false;
+
+	// reference position Geometric
+	std::unique_ptr<DirectX::GeometricPrimitive> m_shape;
+	std::unique_ptr<DirectX::BasicEffect> m_effect;
 };
