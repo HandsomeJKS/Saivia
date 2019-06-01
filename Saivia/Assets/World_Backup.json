@@ -1,0 +1,33 @@
+{
+  "Model": {
+    "Location": [
+      "D:\\Models\\Model_A",
+      "D:\\Models\\Model_B",
+      "D:\\Models\\Model_C"
+    ]
+  },
+  "Texture": {},
+  "Railway": [
+    {
+      "Name": "Main_Railway",
+      "Data": [
+        {
+          "Command": "Straight",
+          "Parameter": [10]
+        },
+        {
+          "Command": "Curve",
+          "Parameter": ["Right", 50, 200, 1]
+        }
+		{
+          "Command": "TransitionCurve",
+          "Parameter": ["Right", 50, 200, 1]
+        }
+		{
+          "Command": "Gradient",
+          "Parameter": ["Right", 50, 200, 1]
+        }
+      ]
+    }
+  ]
+}

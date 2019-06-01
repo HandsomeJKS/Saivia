@@ -30,10 +30,10 @@ Game::Game() noexcept(false) :
 
 	m_cameraPos = START_POSITION.v;
 
-	nowPos = { 0.f, 0.f, 0.f };
-	nowT = { 0.f, 0.f, 1.f };
-	nowB = { 1.f, 0.f, 0.f };
-	nowN = { 0.f, 1.f, 0.f };
+	currentPos = { 0.f, 0.f, 0.f };
+	currentT = { 0.f, 0.f, 1.f };
+	currentB = { 1.f, 0.f, 0.f };
+	currentN = { 0.f, 1.f, 0.f };
 }
 
 Game::~Game()
@@ -131,7 +131,13 @@ void Game::Update(DX::StepTimer const& timer)
 		m_deviceResources->WaitForGpu();
 		// ModelList Reset!!
 		RailwayDataList.clear();
+		RailwayPosList.clear();
 		jsonEngine.clear();
+
+		currentPos = { 0.f, 0.f, 0.f };
+		currentT = { 0.f, 0.f, 1.f };
+		currentB = { 1.f, 0.f, 0.f };
+		currentN = { 0.f, 1.f, 0.f };
 
 		std::ifstream jsonData("Assets\\World.json");
 		jsonData >> jsonEngine;
@@ -244,18 +250,20 @@ void Game::Render()
 		ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
 		commandList->SetDescriptorHeaps(_countof(heaps), heaps);
 		/*
-		m_world = Matrix(nowB, nowN, nowT);
+		m_world = Matrix(currentB, currentN, currentT);
 		m_world *= DirectX::SimpleMath::Matrix::CreateTranslation(
 			DirectX::SimpleMath::Vector3{ 0.f, 0.f, 0.f });
 		Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
 		m_model->Draw(commandList, m_modelNormal.cbegin());	
 		*/
+		
 		for (auto Data_World : RailwayDataList)
 		{
 			m_world = Matrix::Identity;
 			Model::UpdateEffectMatrices(m_modelNormal, Data_World, m_view, m_proj);
 			m_model->Draw(commandList, m_modelNormal.cbegin());
 		}
+		
 	}
 
 	// ImGui
@@ -268,6 +276,19 @@ void Game::Render()
 	ImGui::Text("Camera Position: x: %.3f y: %.3f z: %.3f ", m_cameraPos.x, m_cameraPos.y, m_cameraPos.z);
 	ImGui::Text("Look At: x: %.3f y: %.3f z: %.3f ", lookAt.x, lookAt.y, lookAt.z);
 	ImGui::End();
+
+	if (RWItemUI) {
+		ImGui::Begin("Railway Items");
+		ImGui::BeginChild("Scrolling");
+		for (int n = 0; n < RailwayPosList.size(); n++) {			
+			ImGui::Text("Item %d : x: %.3f y: %.3f z: %.3f ", n+1,
+				RailwayPosList[n].x,
+				RailwayPosList[n].y,
+				RailwayPosList[n].z);
+		}
+		ImGui::EndChild();
+		ImGui::End();
+	}
 
 	if (ModelUI) {
 		ImGui::Begin("Model");
@@ -556,25 +577,96 @@ void Game::SceneParser()
 	{
 		if (data["Command"] == "Straight")
 		{
-			for (int i = 0; i < data["Parameter"][0]; i++)
-			{
-				
-				nowT.Normalize();
-				Vector3 pos = nowPos + nowT * i;
-				Vector3 T = nowT;				
-				Vector3 N = nowN;
-				Vector3 B = nowB = T.Cross(N);
-				
-				auto tmpWorld = Matrix(-B, N, T);
-				tmpWorld *= Matrix::CreateTranslation(
-					Vector3{ pos.x, pos.y, pos.z });
+			int length = data["Parameter"][0];
 
-				RailwayDataList.push_back(std::move(tmpWorld));
-			}
+			/* 新的狀態 */
+			Vector3 Pos;
+			Vector3 T;
+			Vector3 N;
+			Vector3 B;
+
+			for (int unit = 0; unit < length; unit++)
+			{
+				/* 沿著切線前進單位乘上需要的距離 */
+				T = currentT;
+				T.Normalize();
+				Pos = currentPos + T;
+
+				T;
+				N = currentN;
+				B = T.Cross(N);
+
+				/* 放置物件 */
+				auto world = Matrix(-B, N, T);
+				world *= Matrix::CreateTranslation(
+					Vector3{ Pos.x, Pos.y, Pos.z });
+
+				RailwayDataList.push_back(std::move(world));
+
+				/* 重設狀態 */
+				currentPos = Pos;
+				currentT = T;
+				currentN = N;
+				currentB = B;
+			}			
 		}
 		else if (data["Command"] == "Curve")
 		{
+			/* 參數 */
+			std::string turn = data["Parameter"][0];       // 左右轉
+			int radius = data["Parameter"][1];       // 曲率半徑
+			int length = data["Parameter"][2];  // 距離
+			float cant = static_cast<float>(data["Parameter"][3]) / 1000.f;  // 超高，單位為mm 所以要除1000
+			float scale = static_cast<float>(data["Parameter"][4]) / 100.f;  // 前進的距離 use scale
 
+			/* 新的狀態 */
+			Vector3 Pos;
+			Vector3 T;
+			Vector3 N;
+			Vector3 B;
+
+			// 進入曲線的座標，要往前一格(感覺不太合理..)
+			currentT.Normalize();
+			Pos = currentPos + currentT * 1;			
+
+			// 利用半徑找到中心點
+			// 中心點座標 = 單位B乘上半徑R + 目前的座標
+			currentB.Normalize();
+			auto centerPos = currentB * radius;
+
+			// 計算要旋轉的角度						
+			float angle = 1.f / radius;
+
+			for (int unit = 0; unit < length; unit++)
+			{
+				T = currentT;
+				N = currentN;
+				B = T.Cross(N);
+
+				/* 計算位置 */				
+				Pos = Vector3::Transform(centerPos, Matrix::CreateFromAxisAngle(currentN, -angle * unit));				
+				Pos -= centerPos; //以centerPos基準移動(右轉, 感覺不太合理..)
+
+				/* B 指向 centerPos*/
+				B = Pos - -centerPos;
+				B.Normalize();
+				T = N.Cross(B);
+				T.Normalize();
+
+				/* 放置物件 */
+				auto world = Matrix(-B, N, T);
+				world *= Matrix::CreateTranslation(Vector3{ Pos.x, Pos.y, Pos.z })
+					* Matrix::CreateScale(Vector3{ 1.f, 1.f, scale }); // 在原點進行旋轉
+				
+				RailwayDataList.push_back(std::move(world));
+				auto tmpPos = Pos;
+				RailwayPosList.push_back(std::move(tmpPos));
+
+				/* 重設狀態 */
+				currentPos = Pos;
+				currentT = T;
+				currentB = B;				
+			}			
 		}
 		else
 		{
@@ -633,4 +725,6 @@ void Game::SceneParser()
 		m_model.reset();
 		MessageBox(hWnd, L"Model NO Texture!!", L"Error", NULL);
 	}
+
+	RWItemUI = true;
 }

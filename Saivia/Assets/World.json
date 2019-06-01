@@ -10,14 +10,10 @@
   "Railway": [
     {
       "Name": "Main_Railway",
-      "Data": [
-        {
-          "Command": "Straight",
-          "Parameter": [20]
-        },
+      "Data": [        
         {
           "Command": "Curve",
-          "Parameter": ["Right", 50]
+          "Parameter": ["Right", 400, 285, 1, 100]
         }
       ]
     }

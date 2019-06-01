@@ -91,9 +91,12 @@ private:
 	// Railway
 
 	std::vector<DirectX::SimpleMath::Matrix> RailwayDataList;
+	std::vector<DirectX::SimpleMath::Vector3> RailwayPosList;
 
-	DirectX::SimpleMath::Vector3 nowPos;
-	DirectX::SimpleMath::Vector3 nowT;
-	DirectX::SimpleMath::Vector3 nowB;
-	DirectX::SimpleMath::Vector3 nowN;
+	DirectX::SimpleMath::Vector3 currentPos;
+	DirectX::SimpleMath::Vector3 currentT;
+	DirectX::SimpleMath::Vector3 currentB;
+	DirectX::SimpleMath::Vector3 currentN;
+
+	bool RWItemUI = false;
 };
