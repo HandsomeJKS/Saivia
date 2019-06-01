@@ -616,7 +616,7 @@ void Game::SceneParser()
 			std::string turn = data["Parameter"][0];       // 左右轉
 			int radius = data["Parameter"][1];       // 曲率半徑
 			int length = data["Parameter"][2];  // 距離
-			float cant = static_cast<float>(data["Parameter"][3]) / 1000.f;  // 超高，單位為mm 所以要除1000
+			float cant = static_cast<float>(data["Parameter"][3]);  // 超高
 			float scale = static_cast<float>(data["Parameter"][4]) / 100.f;  // 前進的距離 use scale
 
 			/* 新的狀態 */
@@ -648,10 +648,12 @@ void Game::SceneParser()
 				Pos -= centerPos; //以centerPos基準移動(右轉, 感覺不太合理..)
 
 				/* B 指向 centerPos*/
-				B = Pos - -centerPos;
+				B = Pos - (-centerPos);
 				B.Normalize();
 				T = N.Cross(B);
-				T.Normalize();
+				T.Normalize();				
+				N = Vector3::Transform(N, Matrix::CreateFromAxisAngle(T, -sin(cant)));
+				B = -N.Cross(T);
 
 				/* 放置物件 */
 				auto world = Matrix(-B, N, T);
