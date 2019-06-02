@@ -653,7 +653,7 @@ void Game::SceneParser()
 			float scale = static_cast<float>(data["Parameter"][4]) / 100.f;  // 前進的距離 use scale
 
 			/* 新的狀態 */
-			Vector3 Pos;
+			Vector3 Pos = currentPos;
 			Vector3 T;
 			Vector3 N;
 			Vector3 B;
@@ -665,7 +665,7 @@ void Game::SceneParser()
 			// 利用半徑找到中心點
 			// 中心點座標 = 單位B乘上半徑R + 目前的座標
 			currentB.Normalize();
-			auto centerPos = currentB * radius;
+			auto centerPos = (currentB * radius) + currentPos;
 
 			// 計算要旋轉的角度						
 			float angle = 1.f / radius;
@@ -677,11 +677,17 @@ void Game::SceneParser()
 				B = - T.Cross(N);
 				
 				// 計算位置
-				Pos = Vector3::Transform(centerPos, Matrix::CreateFromAxisAngle(currentN, -angle * unit));												
-				Pos -= centerPos; //以centerPos基準移動(右轉, 感覺不太合理..)
+				auto posVector = Vector3::Transform(centerPos, Matrix::CreateFromAxisAngle(currentN, angle * unit));												
+				posVector.Normalize();
+				if (turn == "Right") {
+					Pos = centerPos + (posVector * radius);
+				}
+				else {
+					Pos = centerPos - (posVector * radius);
+				}
 
 				// B 指向 centerPos 的水平向量
-				B = Pos + centerPos;
+				B = Pos - centerPos;
 				B.Normalize();
 
 				// 取得切線向量
@@ -712,9 +718,8 @@ void Game::SceneParser()
 				/* 重設狀態 */
 				currentPos = Pos;
 				currentT = T;
-				currentB = B;				
-			}
-			currentT = -currentT;
+				// currentB = B;				
+			}			
 		}
 		else
 		{
