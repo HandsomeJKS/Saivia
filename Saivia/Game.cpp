@@ -670,6 +670,8 @@ void Game::SceneParser()
 			// 計算要旋轉的角度						
 			float angle = 1.f / radius;
 
+			auto curveStartPos = Pos;
+
 			for (int unit = 0; unit < length; unit++)
 			{
 				T = currentT;
@@ -677,7 +679,8 @@ void Game::SceneParser()
 				B = - T.Cross(N);
 				
 				// 計算位置
-				auto posVector = Vector3::Transform(centerPos, Matrix::CreateFromAxisAngle(currentN, angle * unit));												
+				auto rotatePos = centerPos - curveStartPos;
+				auto posVector = Vector3::Transform(rotatePos, Matrix::CreateFromAxisAngle(currentN, angle * unit));
 				posVector.Normalize();
 				if (turn == "Right") {
 					Pos = centerPos + (posVector * radius);
@@ -709,7 +712,7 @@ void Game::SceneParser()
 
 				// 放置物件
 				auto world = Matrix(-B, N, -T) * Matrix::Identity;
-				world *= Matrix::CreateTranslation(Vector3{ Pos.x, Pos.y, Pos.z }); // 在原點進行旋轉
+				world *= Matrix::CreateTranslation(Vector3{ Pos.x, Pos.y, Pos.z });
 				
 				RailwayDataList.push_back(std::move(world));
 				auto tmpPos = Pos;

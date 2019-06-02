@@ -17,8 +17,20 @@
         },
         {
           "Command": "Curve",
+          "Parameter": ["Right", 10, 10, 0.01, 100]
+        },
+		{
+          "Command": "Straight",
+          "Parameter": [5]
+        },
+        {
+          "Command": "Curve",
           "Parameter": ["Left", 10, 10, 0.01, 100]
-        }	
+        },
+		{
+          "Command": "Straight",
+          "Parameter": [10]
+        }
       ]
     }
   ]
