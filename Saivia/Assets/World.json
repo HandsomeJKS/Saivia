@@ -13,8 +13,12 @@
       "Data": [        
         {
           "Command": "Curve",
-          "Parameter": ["Right", 400, 285, 0.2, 100]
-        }
+          "Parameter": ["Left", 50, 10, 0.01, 100]
+        },
+		{
+          "Command": "Straight",
+          "Parameter": [5]
+        }	
       ]
     }
   ]

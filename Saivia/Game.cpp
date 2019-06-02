@@ -34,6 +34,12 @@ Game::Game() noexcept(false) :
 	currentT = { 0.f, 0.f, 1.f };
 	currentB = { 1.f, 0.f, 0.f };
 	currentN = { 0.f, 1.f, 0.f };
+
+	// Identity
+	// 1 0 0 0
+	// 0 1 0 0 
+	// 0 0 1 0
+	// => B N T
 }
 
 Game::~Game()
@@ -618,14 +624,16 @@ void Game::SceneParser()
 
 				T;
 				N = currentN;
-				B = T.Cross(N);
+				B = -T.Cross(N);
 
 				/* 放置物件 */
-				auto world = Matrix(-B, N, T);
+				auto world = Matrix(B, N, T);
 				world *= Matrix::CreateTranslation(
 					Vector3{ Pos.x, Pos.y, Pos.z });
 
 				RailwayDataList.push_back(std::move(world));
+				auto tmpPos = Pos;
+				RailwayPosList.push_back(std::move(tmpPos));
 
 				/* 重設狀態 */
 				currentPos = Pos;
@@ -634,6 +642,7 @@ void Game::SceneParser()
 				currentB = B;
 			}			
 		}
+		/* 半徑過小時就能看出TBN有問題 */
 		else if (data["Command"] == "Curve")
 		{
 			/* 參數 */
@@ -648,10 +657,10 @@ void Game::SceneParser()
 			Vector3 T;
 			Vector3 N;
 			Vector3 B;
-
-			// 進入曲線的座標，要往前一格(感覺不太合理..)
-			currentT.Normalize();
-			// Pos = currentPos + currentT * 1;			
+			if (turn=="Right")
+			{
+				radius = -radius;
+			}
 
 			// 利用半徑找到中心點
 			// 中心點座標 = 單位B乘上半徑R + 目前的座標
@@ -665,26 +674,36 @@ void Game::SceneParser()
 			{
 				T = currentT;
 				N = currentN;
-				B = T.Cross(N);
-
-				/* 計算位置 */				
-				Pos = Vector3::Transform(centerPos, Matrix::CreateFromAxisAngle(currentN, -angle * unit));				
+				B = - T.Cross(N);
+				
+				// 計算位置
+				Pos = Vector3::Transform(centerPos, Matrix::CreateFromAxisAngle(currentN, -angle * unit));												
 				Pos -= centerPos; //以centerPos基準移動(右轉, 感覺不太合理..)
 
-				/* B 指向 centerPos*/
-				B = Pos - (-centerPos);
+				// B 指向 centerPos 的水平向量
+				B = Pos + centerPos;
 				B.Normalize();
-				T = N.Cross(B);
-				T.Normalize();				
-				N = Vector3::Transform(N, Matrix::CreateFromAxisAngle(T, -sin(cant)));
-				B = -N.Cross(T);
-				B.Normalize();
+
+				// 取得切線向量
+				T = -N.Cross(B);
+				T.Normalize();
+
+				// 用切線方向取得超高後的法線向量
+				N = Vector3::Transform(N, Matrix::CreateFromAxisAngle(T, sin(cant)));
 				N.Normalize();
 
-				/* 放置物件 */
-				auto world = Matrix(-B, N, T) * Matrix::Identity;
-				world *= Matrix::CreateTranslation(Vector3{ Pos.x, Pos.y, Pos.z })
-				* Matrix::CreateScale(Vector3{ 1.f, 1.f, scale }); // 在原點進行旋轉
+				// 用法線向量和切線向量取得正確的右手向量
+				B = N.Cross(T);
+				B.Normalize();				
+				
+				if (turn == "Left") {
+					B = -B;
+					T = -T;
+				}				
+
+				// 放置物件
+				auto world = Matrix(-B, N, -T) * Matrix::Identity;
+				world *= Matrix::CreateTranslation(Vector3{ Pos.x, Pos.y, Pos.z }); // 在原點進行旋轉
 				
 				RailwayDataList.push_back(std::move(world));
 				auto tmpPos = Pos;
@@ -694,7 +713,8 @@ void Game::SceneParser()
 				currentPos = Pos;
 				currentT = T;
 				currentB = B;				
-			}			
+			}
+			currentT = -currentT;
 		}
 		else
 		{
@@ -703,13 +723,9 @@ void Game::SceneParser()
 	}
 
 	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
-
 	m_model = Model::CreateFromSDKMESH(L"Assets/Ballast/ballast.sdkmesh");
-
 	ResourceUploadBatch resourceUpload(m_deviceResources->GetD3DDevice());
-
 	resourceUpload.Begin();
-
 	m_model->LoadStaticBuffers(m_deviceResources->GetD3DDevice(), resourceUpload);
 
 	if (!m_model->textureNames.empty())
