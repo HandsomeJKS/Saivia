@@ -178,11 +178,27 @@ void Game::Update(DX::StepTimer const& timer)
 
 	Vector3 move = Vector3::Zero;
 
-	if (kb.Up || kb.W)
-		move.z += 1.f;
+	if (kb.Up || kb.W) {
+		if (isCameraLock)
+		{
 
-	if (kb.Down || kb.S)
-		move.z -= 1.f;
+		}
+		else
+		{
+			move.z += 1.f;
+		}
+	}
+
+	if (kb.Down || kb.S) {
+		if (isCameraLock)
+		{
+
+		}
+		else
+		{
+			move.z -= 1.f;
+		}
+	}
 
 	if (kb.Left || kb.A)
 		move.x += 1.f;
@@ -642,7 +658,6 @@ void Game::SceneParser()
 				currentB = B;
 			}			
 		}
-		/* 半徑過小時就能看出TBN有問題 */
 		else if (data["Command"] == "Curve")
 		{
 			/* 參數 */
