@@ -21,6 +21,30 @@ namespace
 
 static HWND hWnd;
 
+static int avgCpp(lua_State *L)
+{
+	/* get number of arguments */
+	int n = lua_gettop(L);
+	double sum = 0;
+	int i;
+
+	/* loop through each argument */
+	for (i = 1; i <= n; i++)
+	{
+		/* total the arguments */
+		sum += lua_tonumber(L, i);
+	}
+
+	/* push the average */
+	lua_pushnumber(L, sum / n);
+
+	/* push the sum */
+	lua_pushnumber(L, sum);
+
+	/* return the number of results */
+	return 2;
+}
+
 Game::Game() noexcept(false) :
 	m_pitch(0),
 	m_yaw(0)
@@ -106,17 +130,23 @@ void Game::Initialize(HWND window, int width, int height)
 	// Test Lua Her
 	lua_State* ls; //lua篈诀
 	ls = luaL_newstate();
+
+	lua_register(ls, "avg_Cpp", avgCpp);
+
 	luaopen_base(ls);
 	luaL_openlibs(ls);
 	luaL_dofile(ls, "test.lua");
 
-	lua_getglobal(ls, "add"); //眔luaい跑秖
-	lua_pushnumber(ls, (double)30); //盢材1把计溃lua
+	lua_getglobal(ls, "invoke"); //眔luaい跑秖
+	lua_pushnumber(ls, (double)10); //盢材1把计溃lua
 	lua_pushnumber(ls, (double)20); //盢材2把计溃lua
+	lua_pushnumber(ls, (double)30); //盢材3把计溃lua
 	
-	lua_call(ls, 2, 1); //call lua function, 4把计, 0肚计
-	int n = lua_tonumber(ls, -1);
-	lua_pop(ls, 1); //pop
+	lua_call(ls, 3, 2); //call lua function, 3把计, 0肚计
+
+	int avg = lua_tonumber(ls, -2);
+	int sum = lua_tonumber(ls, -1);
+	lua_pop(ls, 2); //pop
 	lua_close(ls);
 
 	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
