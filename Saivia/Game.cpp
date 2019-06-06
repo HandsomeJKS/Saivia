@@ -103,6 +103,22 @@ void Game::Initialize(HWND window, int width, int height)
 
 	m_shape = GeometricPrimitive::CreateCube(0.5f);	
 
+	// Test Lua Her
+	lua_State* ls; //lua篈诀
+	ls = luaL_newstate();
+	luaopen_base(ls);
+	luaL_openlibs(ls);
+	luaL_dofile(ls, "test.lua");
+
+	lua_getglobal(ls, "add"); //眔luaい跑秖
+	lua_pushnumber(ls, (double)30); //盢材1把计溃lua
+	lua_pushnumber(ls, (double)20); //盢材2把计溃lua
+	
+	lua_call(ls, 2, 1); //call lua function, 4把计, 0肚计
+	int n = lua_tonumber(ls, -1);
+	lua_pop(ls, 1); //pop
+	lua_close(ls);
+
 	// TODO: Change the timer settings if you want something other than the default variable timestep mode.
 	// e.g. for 60 FPS fixed timestep update logic, call:
 	/*

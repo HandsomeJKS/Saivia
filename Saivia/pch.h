@@ -89,6 +89,10 @@
 // json
 #include "JSON/json.hpp"
 
+// Lua
+#include "lua.hpp"
+#pragma comment( lib, "lua5.3.lib" )
+
 // To use graphics and CPU markup events with the latest version of PIX, change this to include <pix3.h>
 // then add the NuGet package WinPixEventRuntime to the project.
 #include <pix.h>
